@@ -2,7 +2,6 @@
 using RestaurantDesktop.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -10,197 +9,298 @@ using System.Threading.Tasks;
 
 namespace RestaurantDesktop.Services
 {
-    
-public class ApiService
+    public class ApiService
     {
-        private static readonly HttpClient _http = new(new HttpClientHandler
+        private static readonly HttpClient _http = new HttpClient(new HttpClientHandler
         {
-            // تجاهل SSL في التطوير — شيله في Production
-            ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+            ServerCertificateCustomValidationCallback = delegate { return true; }
         });
 
         private static void SetAuth()
         {
-            _http.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", AppSession.Token);
+            if (!string.IsNullOrEmpty(AppSession.Token))
+            {
+                _http.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", AppSession.Token);
+            }
         }
 
-        private static StringContent Json(object obj) =>
-            new(JsonConvert.SerializeObject(obj), Encoding.UTF8, "application/json");
+        private static StringContent Json(object obj)
+        {
+            string jsonString = JsonConvert.SerializeObject(obj);
+            return new StringContent(jsonString, Encoding.UTF8, "application/json");
+        }
 
-        private static T? Deserialize<T>(string json) =>
-            JsonConvert.DeserializeObject<T>(json);
+        private static T Deserialize<T>(string json)
+        {
+            if (string.IsNullOrEmpty(json))
+                return default(T);
 
-        // ── Auth ──────────────────────────────────────────────────────────────────
+            var settings = new JsonSerializerSettings();
+            settings.NullValueHandling = NullValueHandling.Ignore;
 
-        public static async Task<(bool ok, LoginResponse? data, string error)> LoginAsync(
-            string email, string password)
+            return JsonConvert.DeserializeObject<T>(json, settings);
+        }
+
+        // ── Auth ────────────────────────────────────────────────────────────────
+
+        public static async Task<LoginResult> LoginAsync(string email, string password)
         {
             try
             {
-                var res = await _http.PostAsync(
-                    $"{AppConfig.ApiBaseUrl}/auth/login",
-                    Json(new LoginRequest { Email = email, Password = password }));
+                LoginRequest loginRequest = new LoginRequest();
+                loginRequest.Email = email;
+                loginRequest.Password = password;
 
-                var body = await res.Content.ReadAsStringAsync();
+                HttpResponseMessage res = await _http.PostAsync(
+                    AppConfig.ApiBaseUrl + "/auth/login",
+                    Json(loginRequest));
+
+                string body = await res.Content.ReadAsStringAsync();
                 if (!res.IsSuccessStatusCode)
                 {
-                    dynamic? err = Deserialize<dynamic>(body);
-                    return (false, null, (string?)err?.message ?? "خطأ في تسجيل الدخول");
+                    LoginResult errorResult = new LoginResult();
+                    errorResult.Ok = false;
+                    errorResult.Data = null;
+                    errorResult.Error = "خطأ في تسجيل الدخول";
+                    return errorResult;
                 }
 
-                return (true, Deserialize<LoginResponse>(body), string.Empty);
+                LoginResponse data = Deserialize<LoginResponse>(body);
+                LoginResult successResult = new LoginResult();
+                successResult.Ok = true;
+                successResult.Data = data;
+                successResult.Error = string.Empty;
+                return successResult;
             }
             catch (Exception ex)
             {
-                return (false, null, $"لا يمكن الاتصال بالسيرفر: {ex.Message}");
+                LoginResult errorResult = new LoginResult();
+                errorResult.Ok = false;
+                errorResult.Data = null;
+                errorResult.Error = "لا يمكن الاتصال بالسيرفر: " + ex.Message;
+                return errorResult;
             }
         }
 
-        // ── Restaurants ───────────────────────────────────────────────────────────
+        // ── Restaurants ────────────────────────────────────────────────────────
 
-        public static async Task<PagedResult<RestaurantDto>?> GetRestaurantsAsync(
-            int page = 1, int pageSize = 50)
+        public static async Task<PagedResult<RestaurantDto>> GetRestaurantsAsync(int page = 1, int pageSize = 50)
         {
             SetAuth();
-            var res = await _http.GetAsync(
-                $"{AppConfig.ApiBaseUrl}/restaurants?page={page}&pageSize={pageSize}");
+            string url = AppConfig.ApiBaseUrl + "/restaurants?page=" + page + "&pageSize=" + pageSize;
+            HttpResponseMessage res = await _http.GetAsync(url);
             if (!res.IsSuccessStatusCode) return null;
-            return Deserialize<PagedResult<RestaurantDto>>(
-                await res.Content.ReadAsStringAsync());
+            return Deserialize<PagedResult<RestaurantDto>>(await res.Content.ReadAsStringAsync());
         }
 
-        public static async Task<RestaurantDto?> GetRestaurantAsync(int id)
+        public static async Task<RestaurantDto> GetRestaurantAsync(int id)
         {
             SetAuth();
-            var res = await _http.GetAsync($"{AppConfig.ApiBaseUrl}/restaurants/{id}");
+            string url = AppConfig.ApiBaseUrl + "/restaurants/" + id;
+            HttpResponseMessage res = await _http.GetAsync(url);
             if (!res.IsSuccessStatusCode) return null;
             return Deserialize<RestaurantDto>(await res.Content.ReadAsStringAsync());
         }
 
-        public static async Task<bool> ToggleRestaurantStatusAsync(int id)
+        // ── Menu ───────────────────────────────────────────────────────────────
+
+        public static async Task<List<CategoryDto>> GetMenuAsync(int restaurantId)
         {
             SetAuth();
-            var res = await _http.PutAsync(
-                $"{AppConfig.ApiBaseUrl}/restaurants/{id}/toggle-status", null);
-            return res.IsSuccessStatusCode;
-        }
-
-        // ── Menu ──────────────────────────────────────────────────────────────────
-
-        public static async Task<List<CategoryDto>?> GetMenuAsync(int restaurantId)
-        {
-            SetAuth();
-            var res = await _http.GetAsync(
-                $"{AppConfig.ApiBaseUrl}/restaurants/{restaurantId}/menu");
+            string url = AppConfig.ApiBaseUrl + "/restaurants/" + restaurantId + "/menu";
+            HttpResponseMessage res = await _http.GetAsync(url);
             if (!res.IsSuccessStatusCode) return null;
             return Deserialize<List<CategoryDto>>(await res.Content.ReadAsStringAsync());
         }
 
-        public static async Task<(bool ok, string error)> CreateProductAsync(
-            CreateProductRequest req)
+        public static async Task<ProductResult> CreateProductAsync(CreateProductRequest req)
         {
             SetAuth();
-            var res = await _http.PostAsync(
-                $"{AppConfig.ApiBaseUrl}/products", Json(req));
-            if (res.IsSuccessStatusCode) return (true, string.Empty);
-            var body = await res.Content.ReadAsStringAsync();
-            dynamic? err = Deserialize<dynamic>(body);
-            return (false, (string?)err?.message ?? "فشل إضافة المنتج");
+            string url = AppConfig.ApiBaseUrl + "/products";
+            HttpResponseMessage res = await _http.PostAsync(url, Json(req));
+
+            if (res.IsSuccessStatusCode)
+            {
+                ProductResult successResult = new ProductResult();
+                successResult.Ok = true;
+                successResult.Error = string.Empty;
+                return successResult;
+            }
+
+            ProductResult errorResult = new ProductResult();
+            errorResult.Ok = false;
+            errorResult.Error = "فشل إضافة المنتج";
+            return errorResult;
         }
 
-        public static async Task<(bool ok, string error)> UpdateProductAsync(
-            int id, CreateProductRequest req)
+        public static async Task<ProductResult> UpdateProductAsync(int id, CreateProductRequest req)
         {
             SetAuth();
-            var res = await _http.PutAsync(
-                $"{AppConfig.ApiBaseUrl}/products/{id}", Json(req));
-            if (res.IsSuccessStatusCode) return (true, string.Empty);
-            return (false, "فشل تعديل المنتج");
+            string url = AppConfig.ApiBaseUrl + "/products/" + id;
+            HttpResponseMessage res = await _http.PutAsync(url, Json(req));
+
+            if (res.IsSuccessStatusCode)
+            {
+                ProductResult successResult = new ProductResult();
+                successResult.Ok = true;
+                successResult.Error = string.Empty;
+                return successResult;
+            }
+
+            ProductResult errorResult = new ProductResult();
+            errorResult.Ok = false;
+            errorResult.Error = "فشل تعديل المنتج";
+            return errorResult;
         }
 
         public static async Task<bool> ToggleProductAvailabilityAsync(int id)
         {
             SetAuth();
-            var res = await _http.PutAsync(
-                $"{AppConfig.ApiBaseUrl}/products/{id}/toggle-availability", null);
+            string url = AppConfig.ApiBaseUrl + "/products/" + id + "/toggle-availability";
+            HttpResponseMessage res = await _http.PutAsync(url, null);
             return res.IsSuccessStatusCode;
         }
 
         public static async Task<bool> DeleteProductAsync(int id)
         {
             SetAuth();
-            var res = await _http.DeleteAsync(
-                $"{AppConfig.ApiBaseUrl}/products/{id}");
+            string url = AppConfig.ApiBaseUrl + "/products/" + id;
+            HttpResponseMessage res = await _http.DeleteAsync(url);
             return res.IsSuccessStatusCode;
         }
 
-        // ── Orders ────────────────────────────────────────────────────────────────
+        // ── Orders (المعدلة لجلب كل الأوردرات) ─────────────────────────────────
 
-        /// <summary>
-        /// جيب أوردرات المطعم — الـ API بيرجع my orders للـ customer
-        /// هنا بنجيب كل الأوردرات الخاصة بالمطعم ده عبر /orders بالفلترة
-        /// </summary>
-        public static async Task<List<OrderDetail>?> GetRestaurantOrdersAsync(
-            int restaurantId, string? status = null,
-            int page = 1, int pageSize = 50)
+        public static async Task<List<OrderDetail>> GetRestaurantOrdersAsync(
+            int restaurantId, string status = null, int page = 1, int pageSize = 100)
         {
             SetAuth();
-            var url = $"{AppConfig.ApiBaseUrl}/orders/restaurant/{restaurantId}" +
-                      $"?page={page}&pageSize={pageSize}";
-            if (!string.IsNullOrEmpty(status)) url += $"&status={status}";
+            string url = AppConfig.ApiBaseUrl + "/orders/restaurant/" + restaurantId +
+                      "?page=" + page + "&pageSize=" + pageSize;
 
-            var res = await _http.GetAsync(url);
+            if (!string.IsNullOrEmpty(status))
+                url = url + "&status=" + status;
+
+            HttpResponseMessage res = await _http.GetAsync(url);
             if (!res.IsSuccessStatusCode) return new List<OrderDetail>();
 
-            var body = await res.Content.ReadAsStringAsync();
-            var paged = Deserialize<PagedResult<OrderDetail>>(body);
-            return paged?.Data ?? new List<OrderDetail>();
+            string body = await res.Content.ReadAsStringAsync();
+            PagedResult<OrderDetail> paged = Deserialize<PagedResult<OrderDetail>>(body);
+
+            if (paged != null && paged.Data != null)
+                return paged.Data;
+            else
+                return new List<OrderDetail>();
         }
 
-        public static async Task<OrderDetail?> GetOrderDetailAsync(int orderId)
+        // دالة جديدة: تجلب كل الأوردرات (بتقسيمها على صفحات)
+        public static async Task<List<OrderDetail>> GetAllRestaurantOrdersAsync(
+            int restaurantId, string status = null)
+        {
+            List<OrderDetail> allOrders = new List<OrderDetail>();
+            int page = 1;
+            int pageSize = 100;
+
+            while (true)
+            {
+                List<OrderDetail> orders = await GetRestaurantOrdersAsync(restaurantId, status, page, pageSize);
+
+                if (orders == null || orders.Count == 0)
+                    break;
+
+                allOrders.AddRange(orders);
+
+                if (orders.Count < pageSize)
+                    break;
+
+                page++;
+            }
+
+            return allOrders;
+        }
+
+        public static async Task<OrderStatusResult> UpdateOrderStatusAsync(int orderId, string newStatus)
         {
             SetAuth();
-            var res = await _http.GetAsync($"{AppConfig.ApiBaseUrl}/orders/{orderId}");
-            if (!res.IsSuccessStatusCode) return null;
-            return Deserialize<OrderDetail>(await res.Content.ReadAsStringAsync());
+            string url = AppConfig.ApiBaseUrl + "/orders/" + orderId + "/status";
+
+            UpdateStatusRequest statusRequest = new UpdateStatusRequest();
+            statusRequest.Status = newStatus;
+
+            HttpResponseMessage res = await _http.PutAsync(url, Json(statusRequest));
+
+            if (res.IsSuccessStatusCode)
+            {
+                OrderStatusResult successResult = new OrderStatusResult();
+                successResult.Ok = true;
+                successResult.Error = string.Empty;
+                return successResult;
+            }
+
+            OrderStatusResult errorResult = new OrderStatusResult();
+            errorResult.Ok = false;
+            errorResult.Error = "فشل تحديث الحالة";
+            return errorResult;
         }
 
-        public static async Task<(bool ok, string error)> UpdateOrderStatusAsync(
-            int orderId, string newStatus)
-        {
-            SetAuth();
-            var res = await _http.PutAsync(
-                $"{AppConfig.ApiBaseUrl}/orders/{orderId}/status",
-                Json(new UpdateStatusRequest { Status = newStatus }));
-
-            if (res.IsSuccessStatusCode) return (true, string.Empty);
-            var body = await res.Content.ReadAsStringAsync();
-            dynamic? err = Deserialize<dynamic>(body);
-            return (false, (string?)err?.message ?? "فشل تحديث الحالة");
-        }
-
-        // ── Dashboard (نحسبها من بيانات الأوردرات) ───────────────────────────────
+        // ── Dashboard ─────────────────────────────────────────────────────────
 
         public static async Task<DashboardStats> GetDashboardStatsAsync(int restaurantId)
         {
-            var orders = await GetRestaurantOrdersAsync(restaurantId, pageSize: 200);
+            List<OrderDetail> orders = await GetAllRestaurantOrdersAsync(restaurantId);
             if (orders == null) return new DashboardStats();
 
-            var today = DateTime.Today;
-            var todayOrders = orders.Where(o => o.CreatedAt.Date == today).ToList();
+            DateTime today = DateTime.Today;
 
-            return new DashboardStats
+            int todayOrdersCount = 0;
+            decimal todayRevenue = 0;
+            int pendingOrdersCount = 0;
+            int preparingOrdersCount = 0;
+
+            foreach (OrderDetail order in orders)
             {
-                TodayOrders = todayOrders.Count,
-                TodayRevenue = todayOrders
-                                    .Where(o => o.Status == "Delivered")
-                                    .Sum(o => o.TotalAmount),
-                PendingOrders = orders.Count(o => o.Status == "Pending"),
-                PreparingOrders = orders.Count(o =>
-                                    o.Status == "Accepted" || o.Status == "Preparing"),
-                TotalProducts = 0, // بيتحسب من المنيو
-            };
+                if (order.CreatedAt.Date == today)
+                {
+                    todayOrdersCount++;
+                    if (order.Status == "Delivered")
+                        todayRevenue = todayRevenue + order.TotalAmount;
+                }
+
+                if (order.Status == "Pending")
+                    pendingOrdersCount++;
+
+                if (order.Status == "Accepted" || order.Status == "Preparing")
+                    preparingOrdersCount++;
+            }
+
+            DashboardStats stats = new DashboardStats();
+            stats.TodayOrders = todayOrdersCount;
+            stats.TodayRevenue = todayRevenue;
+            stats.PendingOrders = pendingOrdersCount;
+            stats.PreparingOrders = preparingOrdersCount;
+            stats.TotalProducts = 0;
+
+            return stats;
         }
     }
+
+    public class LoginResult
+    {
+        public bool Ok { get; set; }
+        public LoginResponse Data { get; set; }
+        public string Error { get; set; }
     }
+
+    public class ProductResult
+    {
+        public bool Ok { get; set; }
+        public string Error { get; set; }
+    }
+
+    public class OrderStatusResult
+    {
+        public bool Ok { get; set; }
+        public string Error { get; set; }
+    }
+}

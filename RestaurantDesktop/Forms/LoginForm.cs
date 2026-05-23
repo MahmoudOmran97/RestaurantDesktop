@@ -1,35 +1,32 @@
 ﻿using DevExpress.XtraEditors;
+using RestaurantDesktop.Models;
 using RestaurantDesktop.Services;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace RestaurantDesktop.Forms
 {
     public partial class LoginForm : DevExpress.XtraEditors.XtraForm
     {
-        private PictureBox picLogo = null!;
-        private LabelControl lblTitle = null!;
-        private LabelControl lblSubtitle = null!;
-        private LabelControl lblEmail = null!;
-        private TextEdit txtEmail = null!;
-        private LabelControl lblPassword = null!;
-        private TextEdit txtPassword = null!;
-        private LabelControl lblApiUrl = null!;
-        private TextEdit txtApiUrl = null!;
-        private SimpleButton btnLogin = null!;
-        private LabelControl lblError = null!;
-        private PanelControl pnlCard = null!;
+        private PictureBox picLogo;
+        private LabelControl lblTitle;
+        private LabelControl lblSubtitle;
+        private LabelControl lblEmail;
+        private TextEdit txtEmail;
+        private LabelControl lblPassword;
+        private TextEdit txtPassword;
+        private LabelControl lblApiUrl;
+        private TextEdit txtApiUrl;
+        private SimpleButton btnLogin;
+        private LabelControl lblError;
+        private PanelControl pnlCard;
+
         public LoginForm()
         {
             InitializeComponent();
         }
+
         private void InitializeComponent()
         {
             Text = "Restaurant Manager — تسجيل الدخول";
@@ -40,157 +37,147 @@ namespace RestaurantDesktop.Forms
             BackColor = AppTheme.Primary;
 
             // Card
-            pnlCard = new PanelControl
-            {
-                Size = new Size(400, 500),
-                Location = new Point(40, 60),
-                BackColor = AppTheme.Surface
-            };
+            pnlCard = new PanelControl();
+            pnlCard.Size = new Size(400, 500);
+            pnlCard.Location = new Point(40, 60);
+            pnlCard.BackColor = AppTheme.Surface;
             pnlCard.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
 
             // Logo emoji as label
-            var lblEmoji = new LabelControl
-            {
-                Text = "🍽️",
-                Font = new Font("Segoe UI Emoji", 48),
-                Location = new Point(155, 20),
-                AutoSize = true,
-                BackColor = AppTheme.Surface
-            };
+            LabelControl lblEmoji = new LabelControl();
+            lblEmoji.Text = "🍽️";
+            lblEmoji.Font = new Font("Segoe UI Emoji", 48);
+            lblEmoji.Location = new Point(155, 20);
+            lblEmoji.AutoSize = true;
+            lblEmoji.BackColor = AppTheme.Surface;
 
-            lblTitle = new LabelControl
-            {
-                Text = "إدارة المطعم",
-                Font = new Font("Tahoma", 20, FontStyle.Bold),
-                ForeColor = AppTheme.Primary,
-                Location = new Point(130, 100),
-                AutoSize = true,
-                BackColor = AppTheme.Surface
-            };
+            lblTitle = new LabelControl();
+            lblTitle.Text = "إدارة المطعم";
+            lblTitle.Font = new Font("Tahoma", 20, FontStyle.Bold);
+            lblTitle.ForeColor = AppTheme.Primary;
+            lblTitle.Location = new Point(130, 100);
+            lblTitle.AutoSize = true;
+            lblTitle.BackColor = AppTheme.Surface;
 
-            lblSubtitle = new LabelControl
-            {
-                Text = "سجّل دخولك للمتابعة",
-                Font = new Font("Tahoma", 10),
-                ForeColor = AppTheme.TextSecondary,
-                Location = new Point(140, 140),
-                AutoSize = true,
-                BackColor = AppTheme.Surface
-            };
+            lblSubtitle = new LabelControl();
+            lblSubtitle.Text = "سجّل دخولك للمتابعة";
+            lblSubtitle.Font = new Font("Tahoma", 10);
+            lblSubtitle.ForeColor = AppTheme.TextSecondary;
+            lblSubtitle.Location = new Point(140, 140);
+            lblSubtitle.AutoSize = true;
+            lblSubtitle.BackColor = AppTheme.Surface;
 
             // API URL
-            lblApiUrl = new LabelControl
-            {
-                Text = "رابط السيرفر",
-                Font = new Font("Tahoma", 9),
-                ForeColor = AppTheme.TextSecondary,
-                Location = new Point(30, 185),
-                AutoSize = true,
-                BackColor = AppTheme.Surface
-            };
-            txtApiUrl = new TextEdit
-            {
-                Location = new Point(30, 205),
-                Size = new Size(340, 34),
-                Text = AppConfig.BaseUrl,
-                Properties = { NullValuePrompt = "https://localhost:7001" }
-            };
+            lblApiUrl = new LabelControl();
+            lblApiUrl.Text = "رابط السيرفر";
+            lblApiUrl.Font = new Font("Tahoma", 9);
+            lblApiUrl.ForeColor = AppTheme.TextSecondary;
+            lblApiUrl.Location = new Point(30, 185);
+            lblApiUrl.AutoSize = true;
+            lblApiUrl.BackColor = AppTheme.Surface;
+
+            txtApiUrl = new TextEdit();
+            txtApiUrl.Location = new Point(30, 205);
+            txtApiUrl.Size = new Size(340, 34);
+            txtApiUrl.Text = AppConfig.BaseUrl;
+            txtApiUrl.Properties.NullValuePrompt = "https://localhost:7001";
             txtApiUrl.Font = new Font("Tahoma", 10);
 
             // Email
-            lblEmail = new LabelControl
-            {
-                Text = "البريد الإلكتروني",
-                Font = new Font("Tahoma", 9),
-                ForeColor = AppTheme.TextSecondary,
-                Location = new Point(30, 250),
-                AutoSize = true,
-                BackColor = AppTheme.Surface
-            };
-            txtEmail = new TextEdit
-            {
-                Location = new Point(30, 270),
-                Size = new Size(340, 34),
-                Properties = { NullValuePrompt = "admin@restaurant.com" }
-            };
+            lblEmail = new LabelControl();
+            lblEmail.Text = "البريد الإلكتروني";
+            lblEmail.Font = new Font("Tahoma", 9);
+            lblEmail.ForeColor = AppTheme.TextSecondary;
+            lblEmail.Location = new Point(30, 250);
+            lblEmail.AutoSize = true;
+            lblEmail.BackColor = AppTheme.Surface;
+
+            txtEmail = new TextEdit();
+            txtEmail.Location = new Point(30, 270);
+            txtEmail.Size = new Size(340, 34);
+            txtEmail.Properties.NullValuePrompt = "admin@restaurant.com";
             txtEmail.Font = new Font("Tahoma", 10);
 
             // Password
-            lblPassword = new LabelControl
-            {
-                Text = "كلمة المرور",
-                Font = new Font("Tahoma", 9),
-                ForeColor = AppTheme.TextSecondary,
-                Location = new Point(30, 315),
-                AutoSize = true,
-                BackColor = AppTheme.Surface
-            };
-            txtPassword = new TextEdit
-            {
-                Location = new Point(30, 335),
-                Size = new Size(340, 34),
-                Properties = {
-                PasswordChar = '●',
-                NullValuePrompt = "••••••••"
-            }
-            };
+            lblPassword = new LabelControl();
+            lblPassword.Text = "كلمة المرور";
+            lblPassword.Font = new Font("Tahoma", 9);
+            lblPassword.ForeColor = AppTheme.TextSecondary;
+            lblPassword.Location = new Point(30, 315);
+            lblPassword.AutoSize = true;
+            lblPassword.BackColor = AppTheme.Surface;
+
+            txtPassword = new TextEdit();
+            txtPassword.Location = new Point(30, 335);
+            txtPassword.Size = new Size(340, 34);
+            txtPassword.Properties.PasswordChar = '●';
+            txtPassword.Properties.NullValuePrompt = "••••••••";
             txtPassword.Font = new Font("Tahoma", 10);
-            txtPassword.KeyDown += (_, e) => { if (e.KeyCode == Keys.Enter) DoLogin(); };
+            txtPassword.KeyDown += TxtPassword_KeyDown;
 
             // Error label
-            lblError = new LabelControl
-            {
-                Text = string.Empty,
-                Font = new Font("Tahoma", 9),
-                ForeColor = AppTheme.Danger,
-                Location = new Point(30, 382),
-                Size = new Size(340, 20),
-                AutoSizeMode = LabelAutoSizeMode.None,
-                BackColor = AppTheme.Surface
-            };
+            lblError = new LabelControl();
+            lblError.Text = string.Empty;
+            lblError.Font = new Font("Tahoma", 9);
+            lblError.ForeColor = AppTheme.Danger;
+            lblError.Location = new Point(30, 382);
+            lblError.Size = new Size(340, 20);
+            lblError.AutoSizeMode = LabelAutoSizeMode.None;
+            lblError.BackColor = AppTheme.Surface;
 
             // Login button
-            btnLogin = new SimpleButton
-            {
-                Text = "تسجيل الدخول",
-                Location = new Point(30, 408),
-                Size = new Size(340, 44),
-                Font = new Font("Tahoma", 12, FontStyle.Bold),
-                Appearance =
-            {
-                BackColor = AppTheme.Primary,
-                ForeColor = Color.White,
-                BorderColor= AppTheme.Primary
-            },
-                LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
-            };
-            btnLogin.Click += (_, _) => DoLogin();
+            btnLogin = new SimpleButton();
+            btnLogin.Text = "تسجيل الدخول";
+            btnLogin.Location = new Point(30, 408);
+            btnLogin.Size = new Size(340, 44);
+            btnLogin.Font = new Font("Tahoma", 12, FontStyle.Bold);
+            btnLogin.Appearance.BackColor = AppTheme.Primary;
+            btnLogin.Appearance.ForeColor = Color.White;
+            btnLogin.Appearance.BorderColor = AppTheme.Primary;
+            btnLogin.LookAndFeel.UseDefaultLookAndFeel = false;
+            btnLogin.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
+            btnLogin.Click += BtnLogin_Click;
 
             pnlCard.Controls.AddRange(new Control[]
             {
-            lblEmoji, lblTitle, lblSubtitle,
-            lblApiUrl, txtApiUrl,
-            lblEmail, txtEmail,
-            lblPassword, txtPassword,
-            lblError, btnLogin
+                lblEmoji, lblTitle, lblSubtitle,
+                lblApiUrl, txtApiUrl,
+                lblEmail, txtEmail,
+                lblPassword, txtPassword,
+                lblError, btnLogin
             });
 
             Controls.Add(pnlCard);
 
             // Center card
-            Resize += (_, _) =>
+            Resize += LoginForm_Resize;
+        }
+
+        private void TxtPassword_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
             {
-                pnlCard.Location = new Point(
-                    (Width - pnlCard.Width) / 2,
-                    (Height - pnlCard.Height) / 2);
-            };
+                DoLogin();
+            }
+        }
+
+        private void BtnLogin_Click(object sender, EventArgs e)
+        {
+            DoLogin();
+        }
+
+        private void LoginForm_Resize(object sender, EventArgs e)
+        {
+            pnlCard.Location = new Point(
+                (Width - pnlCard.Width) / 2,
+                (Height - pnlCard.Height) / 2);
         }
 
         private async void DoLogin()
         {
-            var email = txtEmail.Text.Trim();
-            var password = txtPassword.Text.Trim();
-            var apiUrl = txtApiUrl.Text.Trim();
+            string email = txtEmail.Text.Trim();
+            string password = txtPassword.Text.Trim();
+            string apiUrl = txtApiUrl.Text.Trim();
 
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
             {
@@ -200,13 +187,20 @@ namespace RestaurantDesktop.Forms
 
             // حدّث الـ base URL لو تغير
             if (!string.IsNullOrEmpty(apiUrl))
-                AppConfig.BaseUrl = apiUrl.TrimEnd('/');
+            {
+                string trimmedUrl = apiUrl.TrimEnd('/');
+                AppConfig.BaseUrl = trimmedUrl;
+            }
 
             btnLogin.Enabled = false;
             btnLogin.Text = "جاري التسجيل...";
             lblError.Text = string.Empty;
 
-            var (ok, data, error) = await ApiService.LoginAsync(email, password);
+            // التصحيح هنا: استخدام الخصائص بدلاً من تفكيك tuple
+            LoginResult result = await ApiService.LoginAsync(email, password);
+            bool ok = result.Ok;
+            LoginResponse data = result.Data;
+            string error = result.Error;
 
             if (!ok || data == null)
             {
@@ -224,15 +218,23 @@ namespace RestaurantDesktop.Forms
             AppSession.Role = data.Role;
 
             // اجلب أول مطعم مرتبط بالـ Admin
-            var restaurants = await ApiService.GetRestaurantsAsync(pageSize: 5);
-            if (restaurants?.Data?.Count > 0)
+            PagedResult<RestaurantDto> restaurants = await ApiService.GetRestaurantsAsync(pageSize: 5);
+            if (restaurants != null && restaurants.Data != null && restaurants.Data.Count > 0)
+            {
                 AppSession.RestaurantId = restaurants.Data[0].Id;
-
+            }
+            // بعد سطر AppSession.Token = data.Token;
+            System.Windows.Forms.MessageBox.Show("تم تسجيل الدخول بنجاح!\nRole: " + data.Role);
             // افتح الشاشة الرئيسية
-            var main = new MainForm();
+            MainForm main = new MainForm();
             main.Show();
             Hide();
-            main.FormClosed += (_, _) => Close();
+            main.FormClosed += Main_FormClosed;
+        }
+
+        private void Main_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            Close();
         }
     }
 }

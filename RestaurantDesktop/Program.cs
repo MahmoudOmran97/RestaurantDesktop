@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using RestaurantDesktop.Forms;
+using System;
 using System.Windows.Forms;
 
 namespace RestaurantDesktop
@@ -11,7 +9,9 @@ namespace RestaurantDesktop
         [STAThread]
         static void Main()
         {
-            ApplicationConfiguration.Initialize();
+            // تطبيق إعدادات التطبيق الأساسية
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
 
             // DevExpress Skin
             DevExpress.Skins.SkinManager.EnableFormSkins();

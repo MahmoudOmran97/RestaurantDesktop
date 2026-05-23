@@ -1,65 +1,126 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RestaurantDesktop
 {
-    
-
-/// <summary>
-/// ألوان وثيمات التطبيق — لون برتقالي/أبيض يليق بالمطاعم
-/// </summary>
-public static class AppTheme
+    /// <summary>
+    /// ألوان وثيمات التطبيق — لون برتقالي/أبيض يليق بالمطاعم
+    /// </summary>
+    public static class AppTheme
     {
-        public static Color Primary => Color.FromArgb(255, 87, 34);  // #FF5722
-        public static Color PrimaryLight => Color.FromArgb(255, 138, 101); // فاتح
-        public static Color PrimaryDark => Color.FromArgb(198, 40, 40);  // داكن
-        public static Color Background => Color.FromArgb(245, 245, 245);
-        public static Color Surface => Color.White;
-        public static Color TextPrimary => Color.FromArgb(33, 33, 33);
-        public static Color TextSecondary => Color.FromArgb(117, 117, 117);
-        public static Color Success => Color.FromArgb(56, 142, 60);
-        public static Color Warning => Color.FromArgb(245, 124, 0);
-        public static Color Danger => Color.FromArgb(211, 47, 47);
-        public static Color Info => Color.FromArgb(2, 136, 209);
-
-        public static Color StatusColor(string status) => status switch
+        public static Color Primary
         {
-            "Pending" => Warning,
-            "Accepted" => Info,
-            "Preparing" => Color.FromArgb(123, 31, 162),
-            "ReadyForPickup" => Color.FromArgb(0, 121, 107),
-            "OnTheWay" => Primary,
-            "Delivered" => Success,
-            "Cancelled" => Danger,
-            "Rejected" => Danger,
-            _ => TextSecondary
-        };
+            get { return Color.FromArgb(255, 87, 34); }  // #FF5722
+        }
 
-        public static string StatusArabic(string status) => status switch
+        public static Color PrimaryLight
         {
-            "Pending" => "⏳ انتظار",
-            "Accepted" => "✅ مقبول",
-            "Preparing" => "👨‍🍳 جاري التحضير",
-            "ReadyForPickup" => "📦 جاهز للتسليم",
-            "OnTheWay" => "🛵 في الطريق",
-            "Delivered" => "✔️ تم التسليم",
-            "Cancelled" => "❌ ملغي",
-            "Rejected" => "🚫 مرفوض",
-            _ => status
-        };
+            get { return Color.FromArgb(255, 138, 101); } // فاتح
+        }
 
-        public static string[] NextStatuses(string current) => current switch
+        public static Color PrimaryDark
         {
-            "Pending" => new[] { "Accepted", "Rejected" },
-            "Accepted" => new[] { "Preparing" },
-            "Preparing" => new[] { "ReadyForPickup" },
-            "ReadyForPickup" => new[] { "OnTheWay" },
-            "OnTheWay" => new[] { "Delivered" },
-            _ => Array.Empty<string>()
-        };
+            get { return Color.FromArgb(198, 40, 40); }  // داكن
+        }
+
+        public static Color Background
+        {
+            get { return Color.FromArgb(245, 245, 245); }
+        }
+
+        public static Color Surface
+        {
+            get { return Color.White; }
+        }
+
+        public static Color TextPrimary
+        {
+            get { return Color.FromArgb(33, 33, 33); }
+        }
+
+        public static Color TextSecondary
+        {
+            get { return Color.FromArgb(117, 117, 117); }
+        }
+
+        public static Color Success
+        {
+            get { return Color.FromArgb(56, 142, 60); }
+        }
+
+        public static Color Warning
+        {
+            get { return Color.FromArgb(245, 124, 0); }
+        }
+
+        public static Color Danger
+        {
+            get { return Color.FromArgb(211, 47, 47); }
+        }
+
+        public static Color Info
+        {
+            get { return Color.FromArgb(2, 136, 209); }
+        }
+
+        public static Color StatusColor(string status)
+        {
+            if (status == "Pending")
+                return Warning;
+            else if (status == "Accepted")
+                return Info;
+            else if (status == "Preparing")
+                return Color.FromArgb(123, 31, 162);
+            else if (status == "ReadyForPickup")
+                return Color.FromArgb(0, 121, 107);
+            else if (status == "OnTheWay")
+                return Primary;
+            else if (status == "Delivered")
+                return Success;
+            else if (status == "Cancelled")
+                return Danger;
+            else if (status == "Rejected")
+                return Danger;
+            else
+                return TextSecondary;
+        }
+
+        public static string StatusArabic(string status)
+        {
+            if (status == "Pending")
+                return "⏳ انتظار";
+            else if (status == "Accepted")
+                return "✅ مقبول";
+            else if (status == "Preparing")
+                return "👨‍🍳 جاري التحضير";
+            else if (status == "ReadyForPickup")
+                return "📦 جاهز للتسليم";
+            else if (status == "OnTheWay")
+                return "🛵 في الطريق";
+            else if (status == "Delivered")
+                return "✔️ تم التسليم";
+            else if (status == "Cancelled")
+                return "❌ ملغي";
+            else if (status == "Rejected")
+                return "🚫 مرفوض";
+            else
+                return status;
+        }
+
+        public static string[] NextStatuses(string current)
+        {
+            if (current == "Pending")
+                return new string[] { "Accepted", "Rejected" };
+            else if (current == "Accepted")
+                return new string[] { "Preparing" };
+            else if (current == "Preparing")
+                return new string[] { "ReadyForPickup" };
+            else if (current == "ReadyForPickup")
+                return new string[] { "OnTheWay" };
+            else if (current == "OnTheWay")
+                return new string[] { "Delivered" };
+            else
+                return new string[0];
+        }
     }
-    }
+}

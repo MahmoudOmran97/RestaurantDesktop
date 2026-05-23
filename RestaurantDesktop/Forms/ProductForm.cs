@@ -1,40 +1,34 @@
 ﻿using DevExpress.XtraEditors;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
 using RestaurantDesktop.Models;
 using RestaurantDesktop.Services;
-using System.IO;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace RestaurantDesktop.Forms
 {
     public partial class ProductForm : DevExpress.XtraEditors.XtraForm
     {
         private readonly List<CategoryDto> _categories;
-        private readonly ProductDto? _existing;
+        private readonly ProductDto _existing;
         private readonly int? _existingCatId;
 
         // ── Controls ──────────────────────────────────────────────────────────────
-        private DevExpress.XtraEditors.ComboBoxEdit cmbCategory = null!;
-        private TextEdit txtName = null!;
-        private MemoEdit txtDescription = null!;
-        private TextEdit txtPrice = null!;
-        private TextEdit txtDiscount = null!;
-        private TextEdit txtPrepTime = null!;
-        private TextEdit txtCalories = null!;
-        private TextEdit txtImageUrl = null!;
-        private SimpleButton btnSave = null!;
-        private SimpleButton btnCancel = null!;
-        private LabelControl lblError = null!;
+        private DevExpress.XtraEditors.ComboBoxEdit cmbCategory;
+        private TextEdit txtName;
+        private MemoEdit txtDescription;
+        private TextEdit txtPrice;
+        private TextEdit txtDiscount;
+        private TextEdit txtPrepTime;
+        private TextEdit txtCalories;
+        private TextEdit txtImageUrl;
+        private SimpleButton btnSave;
+        private SimpleButton btnCancel;
+        private LabelControl lblError;
 
-        public ProductForm(List<CategoryDto> categories, ProductDto? existing,
+        public ProductForm(List<CategoryDto> categories, ProductDto existing,
                            int? existingCatId = null)
         {
             _categories = categories;
@@ -56,17 +50,25 @@ namespace RestaurantDesktop.Forms
             int y = 16;
 
             Field("القسم", ref y);
-            cmbCategory = new DevExpress.XtraEditors.ComboBoxEdit
-            {
-                Location = new Point(16, y),
-                Size = new Size(456, 34)
-            };
+            cmbCategory = new DevExpress.XtraEditors.ComboBoxEdit();
+            cmbCategory.Location = new Point(16, y);
+            cmbCategory.Size = new Size(456, 34);
             cmbCategory.Font = new Font("Tahoma", 10);
-            foreach (var c in _categories)
+
+            foreach (CategoryDto c in _categories)
                 cmbCategory.Properties.Items.Add(c.Name);
+
             if (_existingCatId.HasValue)
             {
-                var cat = _categories.FirstOrDefault(c => c.Id == _existingCatId);
+                CategoryDto cat = null;
+                foreach (CategoryDto c in _categories)
+                {
+                    if (c.Id == _existingCatId.Value)
+                    {
+                        cat = c;
+                        break;
+                    }
+                }
                 if (cat != null) cmbCategory.EditValue = cat.Name;
             }
             Controls.Add(cmbCategory);
@@ -76,11 +78,9 @@ namespace RestaurantDesktop.Forms
             txtName = MakeTxt(ref y, 34);
 
             Field("الوصف", ref y);
-            txtDescription = new MemoEdit
-            {
-                Location = new Point(16, y),
-                Size = new Size(456, 60)
-            };
+            txtDescription = new MemoEdit();
+            txtDescription.Location = new Point(16, y);
+            txtDescription.Size = new Size(456, 60);
             txtDescription.Font = new Font("Tahoma", 10);
             Controls.Add(txtDescription);
             y += 68;
@@ -102,65 +102,68 @@ namespace RestaurantDesktop.Forms
             txtImageUrl = MakeTxt(ref y, 34);
 
             // Error
-            lblError = new LabelControl
-            {
-                Text = string.Empty,
-                ForeColor = AppTheme.Danger,
-                Font = new Font("Tahoma", 9),
-                Location = new Point(16, y),
-                Size = new Size(456, 20),
-                AutoSizeMode = LabelAutoSizeMode.None,
-                BackColor = AppTheme.Surface
-            };
+            lblError = new LabelControl();
+            lblError.Text = string.Empty;
+            lblError.ForeColor = AppTheme.Danger;
+            lblError.Font = new Font("Tahoma", 9);
+            lblError.Location = new Point(16, y);
+            lblError.Size = new Size(456, 20);
+            lblError.AutoSizeMode = LabelAutoSizeMode.None;
+            lblError.BackColor = AppTheme.Surface;
             Controls.Add(lblError);
             y += 26;
 
             // Buttons
-            btnSave = new SimpleButton
-            {
-                Text = _existing == null ? "💾 إضافة" : "💾 حفظ التعديلات",
-                Location = new Point(16, y),
-                Size = new Size(220, 40),
-                Font = new Font("Tahoma", 11, FontStyle.Bold),
-                Appearance = { BackColor = AppTheme.Primary, ForeColor = Color.White }
-            };
-            btnCancel = new SimpleButton
-            {
-                Text = "إلغاء",
-                Location = new Point(252, y),
-                Size = new Size(220, 40),
-                Font = new Font("Tahoma", 11)
-            };
+            btnSave = new SimpleButton();
+            btnSave.Text = _existing == null ? "💾 إضافة" : "💾 حفظ التعديلات";
+            btnSave.Location = new Point(16, y);
+            btnSave.Size = new Size(220, 40);
+            btnSave.Font = new Font("Tahoma", 11, FontStyle.Bold);
+            btnSave.Appearance.BackColor = AppTheme.Primary;
+            btnSave.Appearance.ForeColor = Color.White;
 
-            btnSave.Click += (_, _) => _ = SaveAsync();
-            btnCancel.Click += (_, _) => DialogResult = DialogResult.Cancel;
+            btnCancel = new SimpleButton();
+            btnCancel.Text = "إلغاء";
+            btnCancel.Location = new Point(252, y);
+            btnCancel.Size = new Size(220, 40);
+            btnCancel.Font = new Font("Tahoma", 11);
+
+            btnSave.Click += BtnSave_Click;
+            btnCancel.Click += BtnCancel_Click;
 
             Controls.AddRange(new Control[] { btnSave, btnCancel });
 
             ClientSize = new Size(492, y + 56);
         }
 
+        private async void BtnSave_Click(object sender, EventArgs e)
+        {
+            await SaveAsync();
+        }
+
+        private void BtnCancel_Click(object sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Cancel;
+        }
+
         private void Field(string label, ref int y)
         {
-            Controls.Add(new LabelControl
-            {
-                Text = label,
-                Font = new Font("Tahoma", 9),
-                ForeColor = AppTheme.TextSecondary,
-                Location = new Point(16, y),
-                AutoSize = true,
-                BackColor = AppTheme.Surface
-            });
+            LabelControl lbl = new LabelControl();
+            lbl.Text = label;
+            lbl.Font = new Font("Tahoma", 9);
+            lbl.ForeColor = AppTheme.TextSecondary;
+            lbl.Location = new Point(16, y);
+            lbl.AutoSize = true;
+            lbl.BackColor = AppTheme.Surface;
+            Controls.Add(lbl);
             y += 20;
         }
 
         private TextEdit MakeTxt(ref int y, int height)
         {
-            var txt = new TextEdit
-            {
-                Location = new Point(16, y),
-                Size = new Size(456, height)
-            };
+            TextEdit txt = new TextEdit();
+            txt.Location = new Point(16, y);
+            txt.Size = new Size(456, height);
             txt.Font = new Font("Tahoma", 10);
             Controls.Add(txt);
             y += height + 8;
@@ -173,9 +176,20 @@ namespace RestaurantDesktop.Forms
             txtName.Text = _existing.Name;
             txtDescription.Text = _existing.Description ?? string.Empty;
             txtPrice.Text = _existing.Price.ToString("F2");
-            txtDiscount.Text = _existing.DiscountedPrice?.ToString("F2") ?? string.Empty;
+
+            // التحقق من وجود خصم (قيمة 0 تعني لا يوجد خصم)
+            if (_existing.DiscountedPrice > 0)
+                txtDiscount.Text = _existing.DiscountedPrice.ToString("F2");
+            else
+                txtDiscount.Text = string.Empty;
+
             txtPrepTime.Text = _existing.PreparationTime.ToString();
-            txtCalories.Text = _existing.Calories?.ToString() ?? string.Empty;
+
+            if (_existing.Calories > 0)
+                txtCalories.Text = _existing.Calories.ToString();
+            else
+                txtCalories.Text = string.Empty;
+
             txtImageUrl.Text = _existing.ImageUrl ?? string.Empty;
         }
 
@@ -183,44 +197,90 @@ namespace RestaurantDesktop.Forms
         {
             lblError.Text = string.Empty;
 
-            var name = txtName.Text.Trim();
+            string name = txtName.Text.Trim();
             if (string.IsNullOrEmpty(name))
-            { lblError.Text = "اسم المنتج مطلوب"; return; }
-
-            if (!decimal.TryParse(txtPrice.Text.Trim(), out decimal price) || price <= 0)
-            { lblError.Text = "برجاء إدخال سعر صحيح"; return; }
-
-            var catName = cmbCategory.EditValue?.ToString();
-            var cat = _categories.FirstOrDefault(c => c.Name == catName);
-            if (cat == null) { lblError.Text = "برجاء اختيار القسم"; return; }
-
-            decimal? discount = null;
-            if (!string.IsNullOrWhiteSpace(txtDiscount.Text) &&
-                decimal.TryParse(txtDiscount.Text.Trim(), out decimal d))
-                discount = d;
-
-            int prepTime = int.TryParse(txtPrepTime.Text.Trim(), out int pt) ? pt : 15;
-            int? calories = null;
-            if (int.TryParse(txtCalories.Text.Trim(), out int cal)) calories = cal;
-
-            var req = new CreateProductRequest
             {
-                CategoryId = cat.Id,
-                Name = name,
-                Description = txtDescription.Text.Trim(),
-                Price = price,
-                DiscountedPrice = discount,
-                PreparationTime = prepTime,
-                Calories = calories,
-                ImageUrl = txtImageUrl.Text.Trim().NullIfEmpty()
-            };
+                lblError.Text = "اسم المنتج مطلوب";
+                return;
+            }
+
+            decimal price;
+            if (!decimal.TryParse(txtPrice.Text.Trim(), out price) || price <= 0)
+            {
+                lblError.Text = "برجاء إدخال سعر صحيح";
+                return;
+            }
+
+            string catName = cmbCategory.EditValue?.ToString();
+
+            CategoryDto cat = null;
+            foreach (CategoryDto c in _categories)
+            {
+                if (c.Name == catName)
+                {
+                    cat = c;
+                    break;
+                }
+            }
+
+            if (cat == null)
+            {
+                lblError.Text = "برجاء اختيار القسم";
+                return;
+            }
+
+            decimal discount = 0;  // 0 تعني لا يوجد خصم
+            if (!string.IsNullOrWhiteSpace(txtDiscount.Text))
+            {
+                decimal d;
+                if (decimal.TryParse(txtDiscount.Text.Trim(), out d))
+                    discount = d;
+            }
+
+            int prepTime = 15;
+            if (!string.IsNullOrWhiteSpace(txtPrepTime.Text))
+            {
+                int pt;
+                if (int.TryParse(txtPrepTime.Text.Trim(), out pt))
+                    prepTime = pt;
+            }
+
+            int calories = 0;  // 0 تعني لا يوجد سعرات حرارية مدخلة
+            if (!string.IsNullOrWhiteSpace(txtCalories.Text))
+            {
+                int cal;
+                if (int.TryParse(txtCalories.Text.Trim(), out cal))
+                    calories = cal;
+            }
+
+            CreateProductRequest req = new CreateProductRequest();
+            req.CategoryId = cat.Id;
+            req.Name = name;
+            req.Description = txtDescription.Text.Trim();
+            req.Price = price;
+            req.DiscountedPrice = discount;
+            req.PreparationTime = prepTime;
+            req.Calories = calories;
+            req.ImageUrl = StringExt.NullIfEmpty(txtImageUrl.Text.Trim());
 
             btnSave.Enabled = false;
             btnSave.Text = "جاري الحفظ...";
 
-            var (ok, error) = _existing == null
-                ? await ApiService.CreateProductAsync(req)
-                : await ApiService.UpdateProductAsync(_existing.Id, req);
+            bool ok;
+            string error;
+
+            if (_existing == null)
+            {
+                ProductResult result = await ApiService.CreateProductAsync(req);
+                ok = result.Ok;      // ✅ استخدام Ok بدلاً من ok
+                error = result.Error; // ✅ استخدام Error بدلاً من error
+            }
+            else
+            {
+                ProductResult result = await ApiService.UpdateProductAsync(_existing.Id, req);
+                ok = result.Ok;      // ✅ استخدام Ok بدلاً من ok
+                error = result.Error; // ✅ استخدام Error بدلاً من error
+            }
 
             if (ok)
             {
@@ -235,9 +295,11 @@ namespace RestaurantDesktop.Forms
         }
     }
 
-    File static class StringExt
+    public static class StringExt
     {
-        public static string? NullIfEmpty(this string? s) =>
-            string.IsNullOrWhiteSpace(s) ? null : s;
+        public static string NullIfEmpty(string s)
+        {
+            return string.IsNullOrWhiteSpace(s) ? null : s;
+        }
     }
 }

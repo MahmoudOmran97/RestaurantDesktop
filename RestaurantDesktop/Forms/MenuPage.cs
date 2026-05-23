@@ -1,13 +1,10 @@
 ﻿using DevExpress.XtraEditors;
+using DevExpress.XtraGrid.Views.Grid;
 using RestaurantDesktop.Models;
 using RestaurantDesktop.Services;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -16,23 +13,25 @@ namespace RestaurantDesktop.Forms
     public partial class MenuPage : DevExpress.XtraEditors.XtraUserControl
     {
         // ── Controls ──────────────────────────────────────────────────────────────
-        private DevExpress.XtraEditors.ComboBoxEdit cmbCategory = null!;
-        private DevExpress.XtraGrid.GridControl grid = null!;
-        private GridView view = null!;
-        private SimpleButton btnRefresh = null!;
-        private SimpleButton btnAdd = null!;
-        private SimpleButton btnEdit = null!;
-        private SimpleButton btnToggle = null!;
-        private SimpleButton btnDelete = null!;
-        private LabelControl lblCount = null!;
+        private DevExpress.XtraEditors.ComboBoxEdit cmbCategory;
+        private DevExpress.XtraGrid.GridControl grid;
+        private DevExpress.XtraGrid.Views.Grid.GridView view;
+        private SimpleButton btnRefresh;
+        private SimpleButton btnAdd;
+        private SimpleButton btnEdit;
+        private SimpleButton btnToggle;
+        private SimpleButton btnDelete;
+        private LabelControl lblCount;
 
-        private List<CategoryDto> _categories = new();
-        private List<ProductDto> _products = new();
+        private List<CategoryDto> _categories;
+        private List<ProductDto> _products;
 
         public MenuPage()
         {
+            _categories = new List<CategoryDto>();
+            _products = new List<ProductDto>();
             InitializeComponent();
-            _ = LoadAsync();
+            Task.Run(async () => await LoadAsync()).Wait();
         }
 
         private void InitializeComponent()
@@ -41,62 +40,50 @@ namespace RestaurantDesktop.Forms
             Dock = DockStyle.Fill;
 
             // ── Toolbar ───────────────────────────────────────────────────────────
-            var pnlToolbar = new PanelControl
-            {
-                Dock = DockStyle.Top,
-                Height = 54,
-                BackColor = AppTheme.Surface,
-                Padding = new Padding(12, 8, 12, 8)
-            };
+            PanelControl pnlToolbar = new PanelControl();
+            pnlToolbar.Dock = DockStyle.Top;
+            pnlToolbar.Height = 54;
+            pnlToolbar.BackColor = AppTheme.Surface;
+            pnlToolbar.Padding = new Padding(12, 8, 12, 8);
             pnlToolbar.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
 
-            var lblCat = new LabelControl
-            {
-                Text = "القسم:",
-                Font = new Font("Tahoma", 9),
-                ForeColor = AppTheme.TextSecondary,
-                Location = new Point(12, 16),
-                AutoSize = true,
-                BackColor = AppTheme.Surface
-            };
+            LabelControl lblCat = new LabelControl();
+            lblCat.Text = "القسم:";
+            lblCat.Font = new Font("Tahoma", 9);
+            lblCat.ForeColor = AppTheme.TextSecondary;
+            lblCat.Location = new Point(12, 16);
+            lblCat.AutoSize = true;
+            lblCat.BackColor = AppTheme.Surface;
 
-            cmbCategory = new DevExpress.XtraEditors.ComboBoxEdit
-            {
-                Location = new Point(70, 12),
-                Size = new Size(200, 30)
-            };
+            cmbCategory = new DevExpress.XtraEditors.ComboBoxEdit();
+            cmbCategory.Location = new Point(70, 12);
+            cmbCategory.Size = new Size(200, 30);
             cmbCategory.Font = new Font("Tahoma", 9);
-            cmbCategory.EditValueChanged += (_, _) => FilterProducts();
+            cmbCategory.EditValueChanged += CmbCategory_EditValueChanged;
 
-            lblCount = new LabelControl
-            {
-                Text = "0 منتج",
-                Font = new Font("Tahoma", 9),
-                ForeColor = AppTheme.TextSecondary,
-                Location = new Point(285, 16),
-                AutoSize = true,
-                BackColor = AppTheme.Surface
-            };
+            lblCount = new LabelControl();
+            lblCount.Text = "0 منتج";
+            lblCount.Font = new Font("Tahoma", 9);
+            lblCount.ForeColor = AppTheme.TextSecondary;
+            lblCount.Location = new Point(285, 16);
+            lblCount.AutoSize = true;
+            lblCount.BackColor = AppTheme.Surface;
 
-            btnRefresh = new SimpleButton
-            {
-                Text = "🔄",
-                Location = new Point(360, 10),
-                Size = new Size(46, 32)
-            };
-            btnRefresh.Click += (_, _) => _ = LoadAsync();
+            btnRefresh = new SimpleButton();
+            btnRefresh.Text = "🔄";
+            btnRefresh.Location = new Point(360, 10);
+            btnRefresh.Size = new Size(46, 32);
+            btnRefresh.Click += BtnRefresh_Click;
 
             pnlToolbar.Controls.AddRange(new Control[]
                 { lblCat, cmbCategory, lblCount, btnRefresh });
 
             // ── Action buttons ────────────────────────────────────────────────────
-            var pnlActions = new PanelControl
-            {
-                Dock = DockStyle.Bottom,
-                Height = 58,
-                BackColor = AppTheme.Surface,
-                Padding = new Padding(12, 10, 12, 10)
-            };
+            PanelControl pnlActions = new PanelControl();
+            pnlActions.Dock = DockStyle.Bottom;
+            pnlActions.Height = 58;
+            pnlActions.BackColor = AppTheme.Surface;
+            pnlActions.Padding = new Padding(12, 10, 12, 10);
             pnlActions.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
 
             btnAdd = MakeBtn("➕ إضافة منتج", AppTheme.Success, 10, true);
@@ -104,17 +91,18 @@ namespace RestaurantDesktop.Forms
             btnToggle = MakeBtn("🔄 تفعيل/إيقاف", AppTheme.Warning, 280, false);
             btnDelete = MakeBtn("🗑️ حذف", AppTheme.Danger, 430, false);
 
-            btnAdd.Click += (_, _) => ShowAddProduct();
-            btnEdit.Click += (_, _) => ShowEditProduct();
-            btnToggle.Click += (_, _) => _ = ToggleProductAsync();
-            btnDelete.Click += (_, _) => _ = DeleteProductAsync();
+            btnAdd.Click += BtnAdd_Click;
+            btnEdit.Click += BtnEdit_Click;
+            btnToggle.Click += BtnToggle_Click;
+            btnDelete.Click += BtnDelete_Click;
 
             pnlActions.Controls.AddRange(new Control[]
                 { btnAdd, btnEdit, btnToggle, btnDelete });
 
             // ── Grid ──────────────────────────────────────────────────────────────
-            grid = new DevExpress.XtraGrid.GridControl { Dock = DockStyle.Fill };
-            view = new GridView();
+            grid = new DevExpress.XtraGrid.GridControl();
+            grid.Dock = DockStyle.Fill;
+            view = new DevExpress.XtraGrid.Views.Grid.GridView();
             grid.MainView = view;
             grid.ViewCollection.Add(view);
 
@@ -132,27 +120,9 @@ namespace RestaurantDesktop.Forms
             view.OptionsView.EnableAppearanceOddRow = true;
             view.Appearance.OddRow.BackColor = Color.FromArgb(250, 250, 250);
 
-            view.RowCellStyle += (s, e) =>
-            {
-                if (e.Column.FieldName == "IsAvailable" && e.CellValue is bool av)
-                    e.Appearance.ForeColor = av ? AppTheme.Success : AppTheme.Danger;
-            };
-
-            view.CustomColumnDisplayText += (s, e) =>
-            {
-                if (e.Column.FieldName == "IsAvailable" && e.Value is bool av)
-                    e.DisplayText = av ? "✅ متاح" : "❌ متوقف";
-                if (e.Column.FieldName == "Price" && e.Value is decimal p)
-                    e.DisplayText = $"{p:F0} EGP";
-                if (e.Column.FieldName == "DiscountedPrice")
-                    e.DisplayText = e.Value == null ? "—" : $"{e.Value:F0} EGP";
-                if (e.Column.FieldName == "PreparationTime" && e.Value is int t)
-                    e.DisplayText = $"{t} دقيقة";
-                if (e.Column.FieldName == "Calories")
-                    e.DisplayText = e.Value == null ? "—" : $"{e.Value} cal";
-            };
-
-            view.FocusedRowChanged += (_, _) => UpdateButtons();
+            view.RowCellStyle += View_RowCellStyle;
+            view.CustomColumnDisplayText += View_CustomColumnDisplayText;
+            view.FocusedRowChanged += View_FocusedRowChanged;
 
             Controls.Add(grid);
             Controls.Add(pnlActions);
@@ -161,44 +131,135 @@ namespace RestaurantDesktop.Forms
             UpdateButtons();
         }
 
-        private SimpleButton MakeBtn(string text, Color color, int x, bool enabled)
+        // ── Event Handlers ────────────────────────────────────────────────────────
+        private void CmbCategory_EditValueChanged(object sender, EventArgs e)
         {
-            return new SimpleButton
-            {
-                Text = text,
-                Location = new Point(x, 10),
-                Size = new Size(136, 36),
-                Font = new Font("Tahoma", 9),
-                Enabled = enabled,
-                Appearance = { BackColor = color, ForeColor = Color.White, BorderColor = color },
-                LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
-            };
+            FilterProducts();
         }
 
-        private static void AddCol(GridView v, string field, string caption, int width)
+        private async void BtnRefresh_Click(object sender, EventArgs e)
         {
-            v.Columns.Add(new DevExpress.XtraGrid.Columns.GridColumn
+            await LoadAsync();
+        }
+
+        private void BtnAdd_Click(object sender, EventArgs e)
+        {
+            ShowAddProduct();
+        }
+
+        private void BtnEdit_Click(object sender, EventArgs e)
+        {
+            ShowEditProduct();
+        }
+
+        private async void BtnToggle_Click(object sender, EventArgs e)
+        {
+            await ToggleProductAsync();
+        }
+
+        private async void BtnDelete_Click(object sender, EventArgs e)
+        {
+            await DeleteProductAsync();
+        }
+
+        private void View_RowCellStyle(object sender, DevExpress.XtraGrid.Views.Grid.RowCellStyleEventArgs e)
+        {
+            if (e.Column.FieldName == "IsAvailable" && e.CellValue is bool av)
             {
-                FieldName = field,
-                Caption = caption,
-                Width = width,
-                OptionsColumn = { AllowEdit = false }
-            });
+                if (av)
+                    e.Appearance.ForeColor = AppTheme.Success;
+                else
+                    e.Appearance.ForeColor = AppTheme.Danger;
+            }
+        }
+
+        private void View_CustomColumnDisplayText(object sender, DevExpress.XtraGrid.Views.Base.CustomColumnDisplayTextEventArgs e)
+        {
+            if (e.Column.FieldName == "IsAvailable" && e.Value is bool av)
+            {
+                e.DisplayText = av ? "✅ متاح" : "❌ متوقف";
+            }
+            else if (e.Column.FieldName == "Price" && e.Value is decimal p)
+            {
+                e.DisplayText = string.Format("{0:F0} EGP", p);
+            }
+            else if (e.Column.FieldName == "DiscountedPrice")
+            {
+                if (e.Value == null)
+                    e.DisplayText = "—";
+                else
+                    e.DisplayText = string.Format("{0:F0} EGP", e.Value);
+            }
+            else if (e.Column.FieldName == "PreparationTime" && e.Value is int t)
+            {
+                e.DisplayText = t.ToString() + " دقيقة";
+            }
+            else if (e.Column.FieldName == "Calories")
+            {
+                if (e.Value == null)
+                    e.DisplayText = "—";
+                else
+                    e.DisplayText = e.Value.ToString() + " cal";
+            }
+        }
+
+        private void View_FocusedRowChanged(object sender, DevExpress.XtraGrid.Views.Base.FocusedRowChangedEventArgs e)
+        {
+            UpdateButtons();
+        }
+
+        private SimpleButton MakeBtn(string text, Color color, int x, bool enabled)
+        {
+            SimpleButton btn = new SimpleButton();
+            btn.Text = text;
+            btn.Location = new Point(x, 10);
+            btn.Size = new Size(136, 36);
+            btn.Font = new Font("Tahoma", 9);
+            btn.Enabled = enabled;
+            btn.Appearance.BackColor = color;
+            btn.Appearance.ForeColor = Color.White;
+            btn.Appearance.BorderColor = color;
+            btn.LookAndFeel.UseDefaultLookAndFeel = false;
+            btn.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
+            return btn;
+        }
+
+        private static void AddCol(DevExpress.XtraGrid.Views.Grid.GridView v, string field, string caption, int width)
+        {
+            DevExpress.XtraGrid.Columns.GridColumn col = new DevExpress.XtraGrid.Columns.GridColumn();
+            col.FieldName = field;
+            col.Caption = caption;
+            col.Width = width;
+            col.OptionsColumn.AllowEdit = false;
+            v.Columns.Add(col);
         }
 
         // ── Load ──────────────────────────────────────────────────────────────────
 
         public async Task LoadAsync()
         {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(async () => await LoadAsync()));
+                return;
+            }
+
             btnRefresh.Enabled = false;
-            _categories = await ApiService.GetMenuAsync(AppSession.RestaurantId)
-                          ?? new List<CategoryDto>();
+            List<CategoryDto> menu = await ApiService.GetMenuAsync(AppSession.RestaurantId);
+
+            if (menu != null)
+                _categories = menu;
+            else
+                _categories = new List<CategoryDto>();
 
             // Populate category dropdown
             cmbCategory.Properties.Items.Clear();
             cmbCategory.Properties.Items.Add("كل الأقسام");
-            foreach (var c in _categories)
+
+            foreach (CategoryDto c in _categories)
+            {
                 cmbCategory.Properties.Items.Add(c.Name);
+            }
             cmbCategory.EditValue = "كل الأقسام";
 
             FilterProducts();
@@ -207,21 +268,44 @@ namespace RestaurantDesktop.Forms
 
         private void FilterProducts()
         {
-            var sel = cmbCategory.EditValue?.ToString();
+            string sel = cmbCategory.EditValue?.ToString();
+
             if (string.IsNullOrEmpty(sel) || sel == "كل الأقسام")
-                _products = _categories.SelectMany(c => c.Products).ToList();
+            {
+                // جمع كل المنتجات من جميع الأقسام
+                _products = new List<ProductDto>();
+                foreach (CategoryDto cat in _categories)
+                {
+                    foreach (ProductDto prod in cat.Products)
+                    {
+                        _products.Add(prod);
+                    }
+                }
+            }
             else
             {
-                var cat = _categories.FirstOrDefault(c => c.Name == sel);
-                _products = cat?.Products ?? new();
+                CategoryDto cat = null;
+                foreach (CategoryDto c in _categories)
+                {
+                    if (c.Name == sel)
+                    {
+                        cat = c;
+                        break;
+                    }
+                }
+
+                if (cat != null && cat.Products != null)
+                    _products = cat.Products;
+                else
+                    _products = new List<ProductDto>();
             }
 
             grid.DataSource = _products;
-            lblCount.Text = $"{_products.Count} منتج";
+            lblCount.Text = _products.Count.ToString() + " منتج";
             UpdateButtons();
         }
 
-        private ProductDto? SelectedProduct
+        private ProductDto SelectedProduct
         {
             get
             {
@@ -233,71 +317,109 @@ namespace RestaurantDesktop.Forms
 
         private void UpdateButtons()
         {
-            var p = SelectedProduct;
-            btnEdit.Enabled = p != null;
-            btnToggle.Enabled = p != null;
-            btnDelete.Enabled = p != null;
+            ProductDto p = SelectedProduct;
+            btnEdit.Enabled = (p != null);
+            btnToggle.Enabled = (p != null);
+            btnDelete.Enabled = (p != null);
         }
 
         // ── CRUD ──────────────────────────────────────────────────────────────────
 
         private void ShowAddProduct()
         {
-            if (!_categories.Any())
+            if (_categories.Count == 0)
             {
                 XtraMessageBox.Show(this, "لا يوجد أقسام في المنيو. أضف قسم أولاً.",
                     "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            using var dlg = new ProductForm(_categories, null);
-            if (dlg.ShowDialog(this) == DialogResult.OK)
-                _ = LoadAsync();
+            using (ProductForm dlg = new ProductForm(_categories, null))
+            {
+                if (dlg.ShowDialog(this) == DialogResult.OK)
+                {
+                    Task.Run(async () => await LoadAsync()).Wait();
+                }
+            }
         }
 
         private void ShowEditProduct()
         {
-            var p = SelectedProduct;
+            ProductDto p = SelectedProduct;
             if (p == null) return;
 
             // ابحث عن الكاتيجوري الخاصة بالمنتج
-            var cat = _categories.FirstOrDefault(c =>
-                c.Products.Any(pr => pr.Id == p.Id));
+            CategoryDto cat = null;
+            foreach (CategoryDto c in _categories)
+            {
+                foreach (ProductDto prod in c.Products)
+                {
+                    if (prod.Id == p.Id)
+                    {
+                        cat = c;
+                        break;
+                    }
+                }
+                if (cat != null) break;
+            }
 
-            using var dlg = new ProductForm(_categories, p, cat?.Id);
-            if (dlg.ShowDialog(this) == DialogResult.OK)
-                _ = LoadAsync();
+            int? catId = null;
+            if (cat != null) catId = cat.Id;
+
+            using (ProductForm dlg = new ProductForm(_categories, p, catId))
+            {
+                if (dlg.ShowDialog(this) == DialogResult.OK)
+                {
+                    Task.Run(async () => await LoadAsync()).Wait();
+                }
+            }
         }
 
         private async Task ToggleProductAsync()
         {
-            var p = SelectedProduct;
+            ProductDto p = SelectedProduct;
             if (p == null) return;
 
-            var action = p.IsAvailable ? "إيقاف" : "تفعيل";
-            if (XtraMessageBox.Show(this, $"{action} المنتج: {p.Name}؟",
+            string action = p.IsAvailable ? "إيقاف" : "تفعيل";
+            string message = action + " المنتج: " + p.Name + "؟";
+
+            if (XtraMessageBox.Show(this, message,
                 "تأكيد", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
                 != DialogResult.Yes) return;
 
-            var ok = await ApiService.ToggleProductAvailabilityAsync(p.Id);
-            if (ok) await LoadAsync();
-            else XtraMessageBox.Show(this, "فشل تحديث المنتج", "خطأ",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            bool ok = await ApiService.ToggleProductAvailabilityAsync(p.Id);
+            if (ok)
+            {
+                await LoadAsync();
+            }
+            else
+            {
+                XtraMessageBox.Show(this, "فشل تحديث المنتج", "خطأ",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private async Task DeleteProductAsync()
         {
-            var p = SelectedProduct;
+            ProductDto p = SelectedProduct;
             if (p == null) return;
 
-            if (XtraMessageBox.Show(this, $"حذف المنتج: {p.Name}؟\nلن تتمكن من التراجع.",
+            string message = "حذف المنتج: " + p.Name + "؟\nلن تتمكن من التراجع.";
+
+            if (XtraMessageBox.Show(this, message,
                 "تأكيد الحذف", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
                 != DialogResult.Yes) return;
 
-            var ok = await ApiService.DeleteProductAsync(p.Id);
-            if (ok) await LoadAsync();
-            else XtraMessageBox.Show(this, "فشل حذف المنتج", "خطأ",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            bool ok = await ApiService.DeleteProductAsync(p.Id);
+            if (ok)
+            {
+                await LoadAsync();
+            }
+            else
+            {
+                XtraMessageBox.Show(this, "فشل حذف المنتج", "خطأ",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }
