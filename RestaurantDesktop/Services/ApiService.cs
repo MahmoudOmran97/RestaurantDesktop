@@ -38,6 +38,10 @@ namespace RestaurantDesktop.Services
 
             var settings = new JsonSerializerSettings();
             settings.NullValueHandling = NullValueHandling.Ignore;
+            // مهم: الـ API بيرجع camelCase (data, total, pageSize)
+            // لكن الـ model بـ PascalCase (Data, Total, PageSize)
+            // CamelCasePropertyNamesContractResolver بيعمل match للاتنين
+            settings.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
 
             return JsonConvert.DeserializeObject<T>(json, settings);
         }
@@ -167,6 +171,35 @@ namespace RestaurantDesktop.Services
             SetAuth();
             string url = AppConfig.ApiBaseUrl + "/products/" + id;
             HttpResponseMessage res = await _http.DeleteAsync(url);
+            return res.IsSuccessStatusCode;
+        }
+
+        public static async Task<ProductResult> UpdateRestaurantAsync(int id, UpdateRestaurantDto dto)
+        {
+            SetAuth();
+            string url = AppConfig.ApiBaseUrl + "/restaurants/" + id + "/desktop-update";
+            HttpResponseMessage res = await _http.PutAsync(url, Json(dto));
+
+            if (res.IsSuccessStatusCode)
+            {
+                ProductResult successResult = new ProductResult();
+                successResult.Ok = true;
+                successResult.Error = string.Empty;
+                return successResult;
+            }
+
+            string body = await res.Content.ReadAsStringAsync();
+            ProductResult errorResult = new ProductResult();
+            errorResult.Ok = false;
+            errorResult.Error = "فشل تحديث بيانات المطعم: " + res.StatusCode;
+            return errorResult;
+        }
+
+        public static async Task<bool> ToggleRestaurantStatusAsync(int id)
+        {
+            SetAuth();
+            string url = AppConfig.ApiBaseUrl + "/restaurants/" + id + "/toggle-status";
+            HttpResponseMessage res = await _http.PutAsync(url, null);
             return res.IsSuccessStatusCode;
         }
 

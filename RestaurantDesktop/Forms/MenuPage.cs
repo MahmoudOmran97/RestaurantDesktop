@@ -31,10 +31,10 @@ namespace RestaurantDesktop.Forms
             _categories = new List<CategoryDto>();
             _products = new List<ProductDto>();
             InitializeComponent();
-            Task.Run(async () => await LoadAsync()).Wait();
+            this.Load += async (s, e) => await LoadAsync();
         }
 
-      
+
 
         // ── Event Handlers ────────────────────────────────────────────────────────
         private void CmbCategory_EditValueChanged(object sender, EventArgs e)

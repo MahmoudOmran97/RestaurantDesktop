@@ -33,10 +33,11 @@ namespace RestaurantDesktop.Forms
         {
             _orders = new List<OrderDetail>();
             InitializeComponent();
-            Task.Run(async () => await RefreshAsync()).Wait();
+            // نستخدم Load event بدل Task.Run().Wait() لتجنب الـ deadlock
+            this.Load += async (s, e) => await RefreshAsync();
         }
 
-       
+
 
         // ── Event Handlers ────────────────────────────────────────────────────────
         private async void CmbStatus_EditValueChanged(object sender, EventArgs e)

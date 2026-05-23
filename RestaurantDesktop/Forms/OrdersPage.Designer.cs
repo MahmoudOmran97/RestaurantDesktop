@@ -114,6 +114,8 @@ namespace RestaurantDesktop.Forms
             grid.ViewCollection.Add(view);
 
             AddCol(view, "Id", "#", 60);
+            AddCol(view, "CustomerName", "العميل", 130);
+            AddCol(view, "CustomerPhone", "الهاتف", 110);
             AddCol(view, "Status", "الحالة", 130);
             AddCol(view, "TotalAmount", "الإجمالي", 110);
             AddCol(view, "PaymentMethod", "طريقة الدفع", 110);

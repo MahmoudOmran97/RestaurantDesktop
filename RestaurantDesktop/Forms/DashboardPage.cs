@@ -29,10 +29,11 @@ namespace RestaurantDesktop.Forms
         public DashboardPage()
         {
             InitializeComponent();
-            Task.Run(async () => await LoadAsync()).Wait();
+            // نستخدم Load event بدل Task.Run().Wait() لتجنب الـ deadlock
+            this.Load += async (s, e) => await LoadAsync();
         }
 
-       
+
         // ── Event Handlers ────────────────────────────────────────────────────────
         private async void BtnRefresh_Click(object sender, EventArgs e)
         {

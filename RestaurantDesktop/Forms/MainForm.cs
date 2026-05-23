@@ -46,14 +46,22 @@ namespace RestaurantDesktop.Forms
         public MainForm()
         {
             InitializeComponent();
-            Task.Run(async () => await InitHubAsync()).Wait();
+            // نستخدم Load event لتجنب deadlock
+            this.Load += async (s, e) =>
+            {
+                await InitHubAsync();
+                await LoadRestaurantNameAsync();
+            };
             ShowPage(GetDashboardPage(), btnDashboard);
         }
 
 
+        // ── OnShown (مطلوب من الـ Designer) ──────────────────────────────────────
         private async void OnShown(object sender, EventArgs e)
         {
-            await LoadRestaurantNameAsync();
+            // تم نقل المنطق الأساسي لـ Load event في الـ constructor
+            // هذه الـ method مطلوبة فقط لمطابقة توقيع EventHandler في Designer.cs
+            await Task.CompletedTask;
         }
 
         // ── Sidebar button factory ────────────────────────────────────────────────
