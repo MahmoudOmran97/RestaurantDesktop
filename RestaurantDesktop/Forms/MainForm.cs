@@ -35,7 +35,7 @@ namespace RestaurantDesktop.Forms
         private DashboardPage _dashboardPage;
         private OrdersPage _ordersPage;
         private MenuPage _menuPage;
-      //  private SettingsPage _settingsPage;
+        private SettingsPage _settingsPage;
         private Control _activePage;
         private SimpleButton _activeBtn;
 
@@ -50,7 +50,7 @@ namespace RestaurantDesktop.Forms
             ShowPage(GetDashboardPage(), btnDashboard);
         }
 
-       
+
         private async void OnShown(object sender, EventArgs e)
         {
             await LoadRestaurantNameAsync();
@@ -123,12 +123,12 @@ namespace RestaurantDesktop.Forms
             return _menuPage;
         }
 
-       /* private SettingsPage GetSettingsPage()
+        private SettingsPage GetSettingsPage()
         {
             if (_settingsPage == null)
                 _settingsPage = new SettingsPage();
             return _settingsPage;
-        }*/
+        }
 
         // ── Restaurant name ───────────────────────────────────────────────────────
         private async Task LoadRestaurantNameAsync()
@@ -190,18 +190,15 @@ namespace RestaurantDesktop.Forms
             lblNewOrders.Visible = false;
         }
 
-        // ── Logout ────────────────────────────────────────────────────────────────
+        // ── إغلاق البرنامج ───────────────────────────────────────────────────────
         private async void BtnLogout_Click(object sender, EventArgs e)
         {
             if (XtraMessageBox.Show(this,
-                "هل تريد تسجيل الخروج؟", "تأكيد",
+                "هل تريد إغلاق البرنامج؟", "تأكيد",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
                 return;
 
             await _hub.StopAsync();
-            AppSession.Clear();
-            LoginForm login = new LoginForm();
-            login.Show();
             Close();
         }
 

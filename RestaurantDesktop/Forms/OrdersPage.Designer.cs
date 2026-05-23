@@ -1,5 +1,4 @@
-﻿
-using DevExpress.XtraEditors;
+﻿using DevExpress.XtraEditors;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -126,6 +125,7 @@ namespace RestaurantDesktop.Forms
             view.OptionsBehavior.Editable = false;
             view.OptionsView.ShowGroupPanel = false;
             view.OptionsView.EnableAppearanceOddRow = true;
+            view.OptionsView.ColumnAutoWidth = false;
             view.Appearance.OddRow.BackColor = Color.FromArgb(250, 250, 250);
             view.Appearance.SelectedRow.BackColor = AppTheme.PrimaryLight;
 

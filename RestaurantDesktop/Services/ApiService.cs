@@ -222,8 +222,8 @@ namespace RestaurantDesktop.Services
 
         public static async Task<OrderStatusResult> UpdateOrderStatusAsync(int orderId, string newStatus)
         {
-            SetAuth();
-            string url = AppConfig.ApiBaseUrl + "/orders/" + orderId + "/status";
+            // لا حاجة لـ SetAuth — endpoint مخصص للمطعم بدون تسجيل دخول
+            string url = AppConfig.ApiBaseUrl + "/orders/" + orderId + "/restaurant-status";
 
             UpdateStatusRequest statusRequest = new UpdateStatusRequest();
             statusRequest.Status = newStatus;
@@ -238,9 +238,10 @@ namespace RestaurantDesktop.Services
                 return successResult;
             }
 
+            string body = await res.Content.ReadAsStringAsync();
             OrderStatusResult errorResult = new OrderStatusResult();
             errorResult.Ok = false;
-            errorResult.Error = "فشل تحديث الحالة";
+            errorResult.Error = "فشل تحديث الحالة: " + res.StatusCode;
             return errorResult;
         }
 

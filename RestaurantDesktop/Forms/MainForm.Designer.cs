@@ -1,5 +1,4 @@
-﻿
-using DevExpress.XtraEditors;
+﻿using DevExpress.XtraEditors;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -166,7 +165,7 @@ namespace RestaurantDesktop.Forms
             btnDashboard.Click += (sender, e) => { ShowPage(GetDashboardPage(), btnDashboard); SetTitle("الرئيسية"); };
             btnOrders.Click += (sender, e) => { ShowPage(GetOrdersPage(), btnOrders); SetTitle("الأوردرات"); ClearNewOrderBadge(); };
             btnMenu.Click += (sender, e) => { ShowPage(GetMenuPage(), btnMenu); SetTitle("المنيو"); };
-            //  btnSettings.Click += (sender, e) => { ShowPage(GetSettingsPage(), btnSettings); SetTitle("الإعدادات"); };
+            btnSettings.Click += (sender, e) => { ShowPage(GetSettingsPage(), btnSettings); SetTitle("الإعدادات"); };
 
             Shown += OnShown;
         }
